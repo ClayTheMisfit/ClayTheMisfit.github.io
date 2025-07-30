@@ -2,23 +2,40 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>🎤 Lyric Prompt Generator (Mobile UI)</title>
+  <title>🎤 Lyric Prompt Generator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="referrer" content="no-referrer-when-downgrade">
+  <meta name="referrer" content="no-referrer-when-downgrade" />
   <style>
-    body { font-family: 'Segoe UI', sans-serif; background: #111; color: #eee; padding: 20px; margin: 0; text-align: center; }
-    h1 { font-size: 1.8em; margin-bottom: 10px; }
-    select { background: #333; color: #fff; border: none; padding: 10px 14px; font-size: 1em; border-radius: 8px; margin-top: 10px; }
-    .prompt-box { margin-top: 30px; padding: 20px; border: 1px solid #444; border-radius: 10px; background: #1c1c1c; max-width: 700px; margin-left: auto; margin-right: auto; }
-    iframe { margin-top: 15px; border-radius: 10px; width: 100%; }
-    .floating-buttons { position: fixed; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 999; }
-    .floating-buttons button { background: #444; color: #fff; border: none; padding: 14px 18px; font-size: 1em; border-radius: 50px; cursor: pointer; box-shadow: 0 0 10px #000; }
-    .floating-buttons button:hover { background: #555; }
-    #copyBtn { display: none; }
-    a { color: #0af; text-decoration: underline; }
+    /* ---------- Base layout ---------- */
+    body{font-family:'Segoe UI',sans-serif;background:#111;color:#eee;padding:20px;margin:0;text-align:center}
+    h1{font-size:1.8em;margin:0 0 10px}
+    select{background:#333;color:#fff;border:0;padding:10px 14px;font-size:1em;border-radius:8px;margin-top:10px}
+    a{color:#0af;text-decoration:underline}
+
+    .prompt-box{margin:30px auto 0;padding:20px;border:1px solid #444;border-radius:10px;background:#1c1c1c;max-width:700px}
+    iframe{margin-top:15px;border-radius:10px;width:100%}
+
+    /* ---------- Floating buttons (mobile) ---------- */
+    .floating-buttons{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:10px;z-index:999}
+    .floating-buttons button{background:#444;color:#fff;border:0;padding:14px 18px;font-size:1em;border-radius:50px;cursor:pointer;box-shadow:0 0 10px #000}
+    .floating-buttons button:hover{background:#555}
+    #copyBtnMobile{display:none}
+
+    /* ---------- Desktop nav ---------- */
+    nav.desktop-nav{display:none;gap:14px;justify-content:center;margin-top:20px}
+    nav.desktop-nav button{background:#444;color:#fff;border:0;padding:10px 20px;font-size:1em;border-radius:8px;cursor:pointer}
+    nav.desktop-nav button:hover{background:#555}
+    #copyBtnDesktop{display:none}
+
+    /* ---------- Responsive switch ---------- */
+    @media (min-width:768px){
+      .floating-buttons{display:none}          /* hide FABs on desktop */
+      nav.desktop-nav{display:flex}            /* show nav bar on desktop */
+    }
   </style>
 </head>
 <body>
+
   <h1>🎤 Lyric Prompt Generator</h1>
   <p><label for="mood">Choose your mood:</label></p>
   <select id="mood">
@@ -30,61 +47,67 @@
     <option value="drugs">💊 Drugs</option>
     <option value="lonely">🕳️ Lonely</option>
   </select>
+
+  <!-- Desktop navigation bar -->
+  <nav class="desktop-nav">
+    <button onclick="generatePrompt()">🎲 Generate Prompt</button>
+    <button id="copyBtnDesktop" onclick="copyPrompt()">📋 Copy Prompt</button>
+  </nav>
+
   <div class="prompt-box" id="promptBox">
     <em>Select a mood and tap 🎲 to get started.</em>
   </div>
+
+  <!-- Floating Action Buttons (mobile) -->
   <div class="floating-buttons">
     <button onclick="generatePrompt()">🎲</button>
-    <button id="copyBtn" onclick="copyPrompt()">📋</button>
+    <button id="copyBtnMobile" onclick="copyPrompt()">📋</button>
   </div>
+
   <script>
-    const prompts = {
-      heartbreak: [{ theme: "Heartbreak after giving everything", imagery: "burned letters, voicemail, torn hoodie", line: "I gave you my soul, now I’m scraping the floor / You said forever, then walked out the door", beat: "https://www.youtube.com/watch?v=p8qVt2Mwfxo" }],
-      numb: [{ theme: "Feeling emotionally frozen", imagery: "ice bath, motionless hands, static TV", line: "My heartbeat’s a whisper, my soul’s on mute / I’m smiling outside but I’m empty in truth", beat: "https://www.youtube.com/watch?v=5CkF87P84Bc" }],
-      nostalgia: [{ theme: "Missing childhood simplicity", imagery: "old playground, Gameboy, broken swing", line: "I miss when love was cartoons and sleep / Now it’s silence and secrets I keep", beat: "https://www.youtube.com/watch?v=vZ7qJJjZdt4" }],
-      anxiety: [{ theme: "Overthinking everything at night", imagery: "ceiling fan, ticking clock, chewed nails", line: "My thoughts scream louder than dreams / I beg for quiet but spiral instead", beat: "https://www.youtube.com/watch?v=QtRUPRG7yYk" }],
-      lostlove: [{ theme: "Someone left, but their memory didn’t", imagery: "candlelight, empty bed, text drafts", line: "You’re gone but my heart still answers your name / Like a ghost stuck on the wrong plane", beat: "https://www.youtube.com/watch?v=ZbmU82dU5xg" }],
-      drugs: [{ theme: "Escaping pain with pills", imagery: "orange bottles, spinning room, blurry lights", line: "I chase peace through chemical lies / numb my soul just to close my eyes", beat: "https://www.youtube.com/watch?v=f5RwZn1oXk4" }],
-      lonely: [{ theme: "Being surrounded but disconnected", imagery: "crowded rooms, unread messages, cracked phone screen", line: "A thousand voices echo near / But not one of them sees me clear", beat: "https://www.youtube.com/watch?v=NePfYxzwNNE" }]
+    /* ----------------- prompt data ----------------- */
+    const prompts={
+      heartbreak:[{theme:"Heartbreak after giving everything",imagery:"burned letters, voicemail, torn hoodie",line:"I gave you my soul, now I’m scraping the floor / You said forever, then walked out the door",beat:"https://www.youtube.com/watch?v=p8qVt2Mwfxo"}],
+      numb:[{theme:"Feeling emotionally frozen",imagery:"ice bath, motionless hands, static TV",line:"My heartbeat’s a whisper, my soul’s on mute / I’m smiling outside but I’m empty in truth",beat:"https://www.youtube.com/watch?v=5CkF87P84Bc"}],
+      nostalgia:[{theme:"Missing childhood simplicity",imagery:"old playground, Gameboy, broken swing",line:"I miss when love was cartoons and sleep / Now it’s silence and secrets I keep",beat:"https://www.youtube.com/watch?v=vZ7qJJjZdt4"}],
+      anxiety:[{theme:"Overthinking everything at night",imagery:"ceiling fan, ticking clock, chewed nails",line:"My thoughts scream louder than dreams / I beg for quiet but spiral instead",beat:"https://www.youtube.com/watch?v=QtRUPRG7yYk"}],
+      lostlove:[{theme:"Someone left, but their memory didn’t",imagery:"candlelight, empty bed, text drafts",line:"You’re gone but my heart still answers your name / Like a ghost stuck on the wrong plane",beat:"https://www.youtube.com/watch?v=ZbmU82dU5xg"}],
+      drugs:[{theme:"Escaping pain with pills",imagery:"orange bottles, spinning room, blurry lights",line:"I chase peace through chemical lies / numb my soul just to close my eyes",beat:"https://www.youtube.com/watch?v=f5RwZn1oXk4"}],
+      lonely:[{theme:"Being surrounded but disconnected",imagery:"crowded rooms, unread messages, cracked phone screen",line:"A thousand voices echo near / But not one of them sees me clear",beat:"https://www.youtube.com/watch?v=NePfYxzwNNE"}]
     };
 
-    let currentPrompt = "";
+    let currentPrompt="";
 
-    function convertToEmbed(url) {
-      const videoId = url.split("v=")[1]?.split("&")[0] || "";
-      return `https://www.youtube.com/embed/${videoId}?rel=0&showinfo=0`;
+    const copyBtnMobile=document.getElementById("copyBtnMobile");
+    const copyBtnDesktop=document.getElementById("copyBtnDesktop");
+
+    function convertToEmbed(url){
+      const id=url.split("v=")[1]?.split("&")[0]||"";
+      return`https://www.youtube.com/embed/${id}?rel=0&showinfo=0`;
     }
 
-    function generatePrompt() {
-      const mood = document.getElementById('mood').value;
-      const list = prompts[mood];
-      const rand = list[Math.floor(Math.random() * list.length)];
+    function generatePrompt(){
+      const mood=document.getElementById("mood").value;
+      const pick=prompts[mood][Math.floor(Math.random()*prompts[mood].length)];
 
-      currentPrompt = `🎭 Theme: ${rand.theme}
-🎞️ Imagery: ${rand.imagery}
-📝 First Line: ${rand.line}
-🎧 Beat: ${rand.beat}`;
+      currentPrompt=`🎭 Theme: ${pick.theme}\n🎞️ Imagery: ${pick.imagery}\n📝 First Line: ${pick.line}\n🎧 Beat: ${pick.beat}`;
 
-      document.getElementById('promptBox').innerHTML = `
-        <h2>🎭 Theme:</h2><p>${rand.theme}</p>
-        <h3>🎞️ Imagery:</h3><p>${rand.imagery}</p>
-        <h3>📝 First Line:</h3><p><em>${rand.line}</em></p>
+      document.getElementById("promptBox").innerHTML=`
+        <h2>🎭 Theme:</h2><p>${pick.theme}</p>
+        <h3>🎞️ Imagery:</h3><p>${pick.imagery}</p>
+        <h3>📝 First Line:</h3><p><em>${pick.line}</em></p>
         <h3>🎧 Beat:</h3>
-        <iframe height="166" src="${convertToEmbed(rand.beat)}" frameborder="0" allowfullscreen></iframe>
-        <p><a href="${rand.beat}" target="_blank">🎵 Click to listen on YouTube</a></p>
-      `;
+        <iframe height="166" src="${convertToEmbed(pick.beat)}" frameborder="0" allowfullscreen></iframe>
+        <p><a href="${pick.beat}" target="_blank">🎵 Click to listen on YouTube</a></p>`;
 
-      document.getElementById("copyBtn").style.display = "inline-block";
+      /* reveal copy buttons on both UIs */
+      copyBtnMobile.style.display="inline-block";
+      copyBtnDesktop.style.display="inline-block";
     }
 
-    function copyPrompt() {
-      if (!currentPrompt) {
-        alert("Generate a prompt first!");
-        return;
-      }
-      navigator.clipboard.writeText(currentPrompt).then(() => {
-        alert("Prompt copied to clipboard!");
-      });
+    function copyPrompt(){
+      if(!currentPrompt){alert("Generate a prompt first!");return;}
+      navigator.clipboard.writeText(currentPrompt).then(()=>alert("Prompt copied to clipboard!"));
     }
   </script>
 </body>
