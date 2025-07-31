@@ -6,31 +6,43 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="referrer" content="no-referrer-when-downgrade" />
   <style>
-    /* ---------- Base layout ---------- */
-    body{font-family:'Segoe UI',sans-serif;background:#111;color:#eee;padding:20px;margin:0;text-align:center}
-    h1{font-size:1.8em;margin:0 0 10px}
-    select{background:#333;color:#fff;border:0;padding:10px 14px;font-size:1em;border-radius:8px;margin-top:10px}
-    a{color:#0af;text-decoration:underline}
+    body { font-family:'Segoe UI',sans-serif; background:#111; color:#eee; margin:0; padding:20px; text-align:center }
+    h1 { font-size:1.8em; margin:0 0 10px }
+    select { background:#333; color:#fff; border:0; padding:10px 14px; font-size:1em; border-radius:8px; margin-top:10px }
+    .prompt-box { margin:30px auto 0; padding:20px; border:1px solid #444; border-radius:10px; background:#1c1c1c; max-width:700px }
+    iframe { margin-top:15px; border-radius:10px; width:100% }
+    a { color:#0af; text-decoration:underline }
 
-    .prompt-box{margin:30px auto 0;padding:20px;border:1px solid #444;border-radius:10px;background:#1c1c1c;max-width:700px}
-    iframe{margin-top:15px;border-radius:10px;width:100%}
+    /* Loading indicator */
+    #loadingIndicator { margin-top:20px; font-style:italic; }
 
-    /* ---------- Floating buttons (mobile) ---------- */
-    .floating-buttons{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:10px;z-index:999}
-    .floating-buttons button{background:#444;color:#fff;border:0;padding:14px 18px;font-size:1em;border-radius:50px;cursor:pointer;box-shadow:0 0 10px #000}
-    .floating-buttons button:hover{background:#555}
-    #copyBtnMobile{display:none}
+    /* FABs for mobile */
+    .floating-buttons {
+      position:fixed; bottom:20px; right:20px;
+      display:flex; flex-direction:column; gap:10px; z-index:999;
+    }
+    .floating-buttons button {
+      background:#444; color:#fff; border:0; padding:14px 18px;
+      font-size:1em; border-radius:50px; cursor:pointer; box-shadow:0 0 10px #000;
+    }
+    .floating-buttons button:hover { background:#555 }
+    #copyBtnMobile { display:none }
 
-    /* ---------- Desktop nav ---------- */
-    nav.desktop-nav{display:none;gap:14px;justify-content:center;margin-top:20px}
-    nav.desktop-nav button{background:#444;color:#fff;border:0;padding:10px 20px;font-size:1em;border-radius:8px;cursor:pointer}
-    nav.desktop-nav button:hover{background:#555}
-    #copyBtnDesktop{display:none}
+    /* Desktop nav */
+    nav.desktop-nav {
+      display:none; gap:14px; justify-content:center; margin-top:20px;
+    }
+    nav.desktop-nav button {
+      background:#444; color:#fff; border:0; padding:10px 20px;
+      font-size:1em; border-radius:8px; cursor:pointer;
+    }
+    nav.desktop-nav button:hover { background:#555 }
+    #copyBtnDesktop { display:none }
 
-    /* ---------- Responsive switch ---------- */
+    /* Switch between mobile and desktop */
     @media (min-width:768px){
-      .floating-buttons{display:none}          /* hide FABs on desktop */
-      nav.desktop-nav{display:flex}            /* show nav bar on desktop */
+      .floating-buttons { display:none }
+      nav.desktop-nav { display:flex }
     }
   </style>
 </head>
@@ -48,12 +60,16 @@
     <option value="lonely">🕳️ Lonely</option>
   </select>
 
-  <!-- Desktop navigation bar -->
+  <!-- Desktop nav -->
   <nav class="desktop-nav">
     <button onclick="generatePrompt()">🎲 Generate Prompt</button>
     <button id="copyBtnDesktop" onclick="copyPrompt()">📋 Copy Prompt</button>
   </nav>
 
+  <!-- Loading indicator -->
+  <div id="loadingIndicator">🎵 Fetching beats… please wait.</div>
+
+  <!-- Prompt output -->
   <div class="prompt-box" id="promptBox">
     <em>Select a mood and tap 🎲 to get started.</em>
   </div>
@@ -65,49 +81,191 @@
   </div>
 
   <script>
-    /* ----------------- prompt data ----------------- */
-    const prompts={
-      heartbreak:[{theme:"Heartbreak after giving everything",imagery:"burned letters, voicemail, torn hoodie",line:"I gave you my soul, now I’m scraping the floor / You said forever, then walked out the door",beat:"https://www.youtube.com/watch?v=p8qVt2Mwfxo"}],
-      numb:[{theme:"Feeling emotionally frozen",imagery:"ice bath, motionless hands, static TV",line:"My heartbeat’s a whisper, my soul’s on mute / I’m smiling outside but I’m empty in truth",beat:"https://www.youtube.com/watch?v=5CkF87P84Bc"}],
-      nostalgia:[{theme:"Missing childhood simplicity",imagery:"old playground, Gameboy, broken swing",line:"I miss when love was cartoons and sleep / Now it’s silence and secrets I keep",beat:"https://www.youtube.com/watch?v=vZ7qJJjZdt4"}],
-      anxiety:[{theme:"Overthinking everything at night",imagery:"ceiling fan, ticking clock, chewed nails",line:"My thoughts scream louder than dreams / I beg for quiet but spiral instead",beat:"https://www.youtube.com/watch?v=QtRUPRG7yYk"}],
-      lostlove:[{theme:"Someone left, but their memory didn’t",imagery:"candlelight, empty bed, text drafts",line:"You’re gone but my heart still answers your name / Like a ghost stuck on the wrong plane",beat:"https://www.youtube.com/watch?v=ZbmU82dU5xg"}],
-      drugs:[{theme:"Escaping pain with pills",imagery:"orange bottles, spinning room, blurry lights",line:"I chase peace through chemical lies / numb my soul just to close my eyes",beat:"https://www.youtube.com/watch?v=f5RwZn1oXk4"}],
-      lonely:[{theme:"Being surrounded but disconnected",imagery:"crowded rooms, unread messages, cracked phone screen",line:"A thousand voices echo near / But not one of them sees me clear",beat:"https://www.youtube.com/watch?v=NePfYxzwNNE"}]
+    // Fragment pools (static beats for all moods except numb)
+    const moodPools = {
+      heartbreak: {
+        themes: ["giving everything and still losing","being left on read","falling for someone who moved on"],
+        imagery: ["burned letters","torn hoodie","red wine on white sheets"],
+        templates: [
+          "I gave you my {theme}, now I’m stuck with {imagery}",
+          "My {theme} still echoes in {imagery}",
+          "{imagery} reminds me of my {theme}"
+        ],
+        beats: ["https://www.youtube.com/watch?v=p8qVt2Mwfxo"]
+      },
+      numb: { themes: ["feeling emotionally frozen","mentally checking out","smiling while broken"],
+              imagery: ["ice bath","static TV","motionless hands"],
+              templates: [
+                "My {theme} is wrapped in {imagery}",
+                "I drift through {imagery}, feeling {theme}",
+                "{imagery} mirrors my {theme}"
+              ],
+              beats: [] // will be filled dynamically
+      },
+      nostalgia: {
+        themes:["missing childhood simplicity","longing for summer nights","wishing for yesterday"],
+        imagery:["broken swing","old cartoons","dusty VHS tapes"],
+        templates:[
+          "{imagery} take me back to {theme}",
+          "I’m stuck between {theme} and {imagery}",
+          "Every {imagery} flashes back to {theme}"
+        ],
+        beats: ["https://www.youtube.com/watch?v=vZ7qJJjZdt4"]
+      },
+      anxiety: {
+        themes:["overthinking at night","social panic","fear of failure"],
+        imagery:["ceiling fan spinning","bitten nails","flashing red light"],
+        templates:[
+          "My {theme} roars over {imagery}",
+          "Drowning in {imagery} while {theme}"
+        ],
+        beats:["https://www.youtube.com/watch?v=QtRUPRG7yYk"]
+      },
+      lostlove: {
+        themes:["someone left but their memory didn’t","trying to forget but relapsing emotionally"],
+        imagery:["candlelight","empty bed","wet pillow","dusty playlist"],
+        templates:[
+          "{theme} plays through {imagery}",
+          "Haunted by {imagery}, {theme}"
+        ],
+        beats:["https://www.youtube.com/watch?v=ZbmU82dU5xg"]
+      },
+      drugs: {
+        themes:["escaping pain","abusing peace","chasing numb"],
+        imagery:["orange bottles","powder on glass","clouded vision"],
+        templates:[
+          "{imagery} is how I silence {theme}",
+          "My {theme} is coated in {imagery}"
+        ],
+        beats:["https://www.youtube.com/watch?v=f5RwZn1oXk4"]
+      },
+      lonely: {
+        themes:["feeling invisible","missing connection","forgotten by everyone"],
+        imagery:["cracked phone screen","empty inbox","quiet rooms"],
+        templates:[
+          "I’m {theme}, surrounded by {imagery}",
+          "{imagery} is the soundtrack to my {theme}"
+        ],
+        beats:["https://www.youtube.com/watch?v=NePfYxzwNNE"]
+      }
     };
 
-    let currentPrompt="";
+    // Track used prompts
+    const usedPrompts = new Set();
+    let currentPrompt = "";
 
-    const copyBtnMobile=document.getElementById("copyBtnMobile");
-    const copyBtnDesktop=document.getElementById("copyBtnDesktop");
-
-    function convertToEmbed(url){
-      const id=url.split("v=")[1]?.split("&")[0]||"";
-      return`https://www.youtube.com/embed/${id}?rel=0&showinfo=0`;
+    function rand(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
     }
 
-    function generatePrompt(){
-      const mood=document.getElementById("mood").value;
-      const pick=prompts[mood][Math.floor(Math.random()*prompts[mood].length)];
+    // Load and save used prompts to localStorage
+    function loadUsedPrompts() {
+      JSON.parse(localStorage.getItem("usedPrompts")||"[]")
+        .forEach(p => usedPrompts.add(p));
+    }
+    function saveUsedPrompts() {
+      localStorage.setItem("usedPrompts", JSON.stringify([...usedPrompts]));
+    }
+    loadUsedPrompts();
 
-      currentPrompt=`🎭 Theme: ${pick.theme}\n🎞️ Imagery: ${pick.imagery}\n📝 First Line: ${pick.line}\n🎧 Beat: ${pick.beat}`;
-
-      document.getElementById("promptBox").innerHTML=`
-        <h2>🎭 Theme:</h2><p>${pick.theme}</p>
-        <h3>🎞️ Imagery:</h3><p>${pick.imagery}</p>
-        <h3>📝 First Line:</h3><p><em>${pick.line}</em></p>
-        <h3>🎧 Beat:</h3>
-        <iframe height="166" src="${convertToEmbed(pick.beat)}" frameborder="0" allowfullscreen></iframe>
-        <p><a href="${pick.beat}" target="_blank">🎵 Click to listen on YouTube</a></p>`;
-
-      /* reveal copy buttons on both UIs */
-      copyBtnMobile.style.display="inline-block";
-      copyBtnDesktop.style.display="inline-block";
+    // Build unique prompt object
+    function generateUniquePrompt(mood) {
+      const pool = moodPools[mood];
+      let attempts = 0;
+      while (attempts < 50) {
+        const theme   = rand(pool.themes);
+        const imagery = rand(pool.imagery);
+        const template= rand(pool.templates);
+        const line    = template
+          .replace("{theme}", theme)
+          .replace("{imagery}", imagery);
+        if (!usedPrompts.has(line)) {
+          usedPrompts.add(line);
+          saveUsedPrompts();
+          return { theme, imagery, line };
+        }
+        attempts++;
+      }
+      // Reset if exhausted
+      usedPrompts.clear();
+      saveUsedPrompts();
+      return generateUniquePrompt(mood);
     }
 
-    function copyPrompt(){
-      if(!currentPrompt){alert("Generate a prompt first!");return;}
-      navigator.clipboard.writeText(currentPrompt).then(()=>alert("Prompt copied to clipboard!"));
+    // YouTube embed helper
+    function convertToEmbed(url) {
+      const id = url.split("v=")[1]?.split("&")[0] || "";
+      return `https://www.youtube.com/embed/${id}?rel=0&showinfo=0`;
+    }
+
+    // API fetch for numb beats
+    async function getBeatLinks() {
+      const apiKey     = 'AIzaSyCjwl9EOuI8nQZpWj7r6hStOcN1Zk0dc-E';
+      const playlistId = 'PLOH_Zd3NnXGczRhbjmioYPRcbLoLKTRTC';
+      const endpoint   = 'https://www.googleapis.com/youtube/v3/playlistItems';
+      const params     = new URLSearchParams({
+        part:       'contentDetails',
+        maxResults: '50',
+        playlistId,
+        key:        apiKey
+      });
+      const res = await fetch(`${endpoint}?${params}`);
+      if (!res.ok) throw new Error(`YouTube API error: ${res.status} ${res.statusText}`);
+      const data = await res.json();
+      return data.items.map(item => `https://www.youtube.com/watch?v=${item.contentDetails.videoId}`);
+    }
+
+    let beatListReady = false;
+    // Load beats on page load
+    async function loadNumbBeats() {
+      try {
+        const beats = await getBeatLinks();
+        moodPools.numb.beats = beats;
+        beatListReady = true;
+      } catch (e) {
+        console.error("Failed to load numb beats:", e);
+        document.getElementById("loadingIndicator").innerText = "⚠️ Could not load beats.";
+      } finally {
+        document.getElementById("loadingIndicator").style.display = "none";
+      }
+    }
+    window.addEventListener("DOMContentLoaded", loadNumbBeats);
+
+    // Generate and render prompt
+    const copyBtnMobile  = document.getElementById("copyBtnMobile");
+    const copyBtnDesktop = document.getElementById("copyBtnDesktop");
+
+    function generatePrompt() {
+      if (!beatListReady) {
+        document.getElementById("promptBox").innerHTML =
+          `<em>Loading beats… please wait.</em>`;
+        return;
+      }
+      const mood = document.getElementById("mood").value;
+      const { theme, imagery, line } = generateUniquePrompt(mood);
+      const beat = rand(moodPools[mood].beats);
+      currentPrompt = `🎭 Theme: ${theme}\n🎞️ Imagery: ${imagery}\n📝 Line: ${line}\n🎧 Beat: ${beat}`;
+
+      document.getElementById("promptBox").innerHTML = `
+        <h2>🎭 Theme:</h2><p>${theme}</p>
+        <h2>🎞️ Imagery:</h2><p>${imagery}</p>
+        <h2>📝 Line:</h2><p>${line}</p>
+        <h2>🎧 Beat:</h2>
+        <iframe height="166" src="${convertToEmbed(beat)}" frameborder="0" allowfullscreen></iframe>
+        <p><a href="${beat}" target="_blank">🎵 Click to listen on YouTube</a></p>
+      `;
+      copyBtnMobile.style.display = "inline-block";
+      copyBtnDesktop.style.display = "inline-block";
+    }
+
+    // Copy prompt to clipboard
+    function copyPrompt() {
+      if (!currentPrompt) {
+        alert("Generate a prompt first!");
+        return;
+      }
+      navigator.clipboard.writeText(currentPrompt)
+        .then(() => alert("Prompt copied to clipboard!"));
     }
   </script>
 </body>
