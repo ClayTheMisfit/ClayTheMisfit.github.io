@@ -1,0 +1,29 @@
+body {
+  font-family: sans-serif;
+  background-color: #0f0f0f;
+  color: #ffffff;
+  text-align: center;
+  padding: 2rem;
+}
+
+h1 {
+  margin-bottom: 1.5rem;
+}
+
+#beatList {
+  list-style: none;
+  padding: 0;
+}
+
+#beatList li {
+  margin: 0.5rem 0;
+}
+
+#beatList a {
+  color: #00ffee;
+  text-decoration: none;
+}
+
+#beatList a:hover {
+  text-decoration: underline;
+}

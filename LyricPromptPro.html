@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>🎤 Lyric Prompt Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <h1>🎤 Lyric Prompt Generator</h1>
+  <p><label for="mood">Choose your mood:</label></p>
+  <select id="mood">
+    <option value="heartbreak">💔 Heartbreak</option>
+    <option value="numb">🧊 Numb</option>
+    <option value="nostalgia">📼 Nostalgia</option>
+    <option value="anxiety">😵‍💫 Anxiety</option>
+    <option value="lostlove">👻 Lost Love</option>
+    <option value="drugs">💊 Drugs</option>
+    <option value="lonely">🕳️ Lonely</option>
+  </select>
+
+  <!-- Desktop navigation bar -->
+  <nav class="desktop-nav">
+    <button onclick="generatePrompt()">🎲 Generate Prompt</button>
+    <button id="copyBtnDesktop" onclick="copyPrompt()">📋 Copy Prompt</button>
+  </nav>
+
+  <!-- Loading indicator -->
+  <div id="loadingIndicator">🎵 Fetching beats… please wait.</div>
+
+  <!-- Prompt output -->
+  <div class="prompt-box" id="promptBox">
+    <em>Select a mood and tap 🎲 to get started.</em>
+  </div>
+
+  <!-- Floating Action Buttons (mobile) -->
+  <div class="floating-buttons">
+    <button onclick="generatePrompt()">🎲</button>
+    <button id="copyBtnMobile" onclick="copyPrompt()">📋</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
